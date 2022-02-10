@@ -17,10 +17,12 @@ These are specified in the inlsd.dat file.
 
 ### Input observation
 The input observation file name, this can include a path to the file.
+
 The observation file is assumed to have columns of either: wavelength, I/Ic, V/Ic, Null1/Ic, Null2/Ic, uncertainty, or alternately: wavelength, I/Ic, uncertainty.  All normalized to the continuum.  This follows the output of the Libre-ESPRIT data reduction pipeline.  The second polarimetric Null is usually not used.  The uncertainties should be 1 sigma, ideally from propagating uncertainties through the data reduction.
 
 ### Line mask
 The line mask file name, this can include a path to the file. 
+
 This should have columns of wavelength, species code (atomic number + ionization state/100, where neutrals have an ionization of 0), line depth at the line center (depth from the continuum), excitation potential of the lower level (in eV), effective Lande factor, and a flag for whether the line is used (1=use, 0=don't).  The code expects to have 1 line of header, usually the number of lines in the mask, but that is not currently read or used for anything.  The excitation potential is never actually used.  The observation wavelength needs to be in the same units as the line mask wavelengths. 
 
 ### Start and end velocity (km/s) for LSD profile
@@ -28,6 +30,7 @@ The range that the LSD profile will span, in velocity units.
 
 ### Pixel size in velocity (km/s)
 The size of a pixel in the LSD profile, in velocity units.
+
 Usually a good choice is the average pixel size of the observation (in km/s), which the code will print to terminal as a diagnostic. 
 
 Choosing a pixel size that is too small may cause oscillations in the LSD profile, usually when the pixel size is smaller than the mean observation pixel size.  This is essentially a sampling rate problem.  Since the observed spectrum pixels are roughly (although not exactly) the same size in velocity, sampling it with model LSD pixels that are too small effectively aliases some power into high frequencies, creating that oscillation.
@@ -68,7 +71,8 @@ The code can optionally plot the LSD profile with matplotlib.  The values are a 
 
 
 ## Terminal output
-(This may be subject to change as the code evolves!)
+(This may be subject to change as the code evolves)
+
 A brief description of some of the text output to the terminal.  The output is mostly self explanatory, I hope.
 
 The average pixel sized of the observed spectrum, in velocity units, is provided.
