@@ -10,7 +10,7 @@ You can also run the code from the command line like:
 ```
 python lsdpy.py [observation_file] [output_profile] -m [line_mask]
 ```
-Any other parameters will be still read from the inlsd.dat file (as will any command line parameters not provided).  The observation and line mask can optionally be specified with inlsd.dat rather than the command line.
+Any other parameters will be still read from the inlsd.dat file.  The observation and line mask can optionally be specified with inlsd.dat rather than the command line.
 
 ## Input parameters
 These are specified in the inlsd.dat file.
