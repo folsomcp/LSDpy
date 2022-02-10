@@ -1,0 +1,22 @@
+#Controls for the LSD code.  Order of lines matters, # are comments
+# Input observation
+hd219134_19jun16_v_01.s
+# Line mask
+mask-4500g40-0.1-trim3.dat
+# start and end velocity (km/s) for LSD profile
+-200.  +200.
+# pixel size in velocity (km/s)
+1.8
+# mask/profile normalization parameters (depth, Lande factor, wavelength(nm))
+0.4  1.2  600.
+# remove continuum polarization in LSD profile? (0=no, 1=yes)
+1
+# sigma clip to reject bad pixels (sigma level, iterations 0 = no clipping done)
+# the sigma level should be very large, to avoid rejecting too many points
+500.  0
+# Interpolation mode for fitting model to observation (1=linear 0=nearest)
+1
+# Save LSD model spectrum? (0=no, 1=yes),  file name
+1  outModelSpec.dat
+# Plot LSD profile?  Save plot? (0=no, 1=yes), file name (.png .eps or .pdf)
+1  0  prof.png
