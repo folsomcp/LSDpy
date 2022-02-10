@@ -7,7 +7,9 @@ The main executable is lsdpy.py, there are a set of control parameters specified
 To use the code you can edit the file inlsd.dat, specify the observation file to process, the line mask to use, and any other parameters you need to modify.  Then run lsdpy.py and it should generate an output LSD profile called prof.dat.  If all went well the prof.dat file will have columns of velocity Stokes I, error on Stokes I, Stokes V, error on Stokes V, the null (N1), and errors on the null.
 
 You can also run the code from the command line like:
-> python lsdpy.py observation_file output_profile -m line_mask
+```
+python lsdpy.py [observation_file] [output_profile] -m [line_mask]
+```
 Any other parameters will be still read from the inlsd.dat file (as will any command line parameters not provided).  The observation and line mask can optionally be specified with inlsd.dat rather than the command line.
 
 ## Input parameters
@@ -35,7 +37,7 @@ Using LSD pixels larger than the observed pixels generally seems to be safe, alt
 ### Mask/profile normalization parameters
 Normalizing line depth, Lande factor, and wavelength (nm)
 
-These parameters scale the LSD profile, or equivalently normalize the line mask, by those values.  Just depth (the 1st value) is used for Stokes I, and (depth)*(Lande_factor)*(wavelength) for Stokes V.  The LSD profile amplitudes depend on the scaling of the weights in the LSD mask, and mathematically that scaling is arbitrary.  These parameters control that scaling explicitly.  For a detailed explanation see Kochukhov et al. (2010, A&A 524, A5), particularly Sect 2.5 and 2.6.
+These parameters scale the LSD profile, or equivalently normalize the line mask, by those values.  Just depth (the 1st value) is used for Stokes I, and (depth)x(Lande_factor)x(wavelength) for Stokes V.  The LSD profile amplitudes depend on the scaling of the weights in the LSD mask, and mathematically that scaling is arbitrary.  These parameters control that scaling explicitly.  For a detailed explanation see Kochukhov et al. (2010, A&A 524, A5), particularly Sect 2.5 and 2.6.
 
 The most important point is that the LSD profile should theoretically behave like a line with these parameters for Lande factor, wavelength, and central depth (of an unbroadened line), to the extent that the approximations in LSD hold true.  A popular choice is to set those parameters to the average from the line mask, but one can also use some round 'reasonable' values.  Just remember what you used when you measure longitudinal fields or attempt ZDI.  
 
