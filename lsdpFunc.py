@@ -34,17 +34,19 @@ class paramsLSD:
                 elif(i==5):
                     self.removeContPol = int(line.split()[0])
                 elif(i==6):
+                    self.trimMask = int(line.split()[0])
+                elif(i==7):
                     self.sigmaClip = float(line.split()[0])
                     self.sigmaClipIter = int(line.split()[1])
-                elif(i==7):
-                    self.interpMode = int(line.split()[0])
                 elif(i==8):
+                    self.interpMode = int(line.split()[0])
+                elif(i==9):
                     self.fSaveModelSpec = int(line.split()[0])
                     if(self.fSaveModelSpec == 1):
                         self.outModelSpecName = line.split()[1]
                     else:
                         self.outModelSpecName = ''
-                elif(i==9):
+                elif(i==10):
                     self.fLSDPlotImg = int(line.split()[0])
                     self.fSavePlotImg = int(line.split()[1])
                     if(self.fSavePlotImg == 1):
@@ -62,14 +64,23 @@ class paramsLSD:
             
 class observation:
     def __init__(self, fname):
-
-        #self.wlOrig, self.specIOrig, self.specVOrig, self.specN1Orig, self.specN2Orig, self.specSigOrig \
-        #    = np.loadtxt(fname, skiprows=2, unpack=True)
+        #Read in the observed spectrum and save it
         ## Reading manually is ~4 time faster than np.loadtxt for a large files 
         fObs = open(fname, 'r')
         nLines = 0
-        fObs.readline()
-        fObs.readline()
+        #Check if the file starts with data or a header (assume it is two lines)
+        line = fObs.readline()
+        words = line.split()
+        try:
+            float(words[0])
+            float(words[1])
+            float(words[2])
+            self.header = '#\n'
+            fObs.seek(0)
+        except ValueError:
+            self.header = line
+            fObs.readline()
+        
         for line in fObs:
             words = line.split()
             if(nLines == 0):
@@ -102,8 +113,9 @@ class observation:
         i = 0
         #rewind to start then advance the file pointer 2 lines
         fObs.seek(0)
-        fObs.readline()
-        fObs.readline()
+        if self.header != '#\n':
+            fObs.readline()
+            fObs.readline()
         for line in fObs:
             words = line.split()
             if (len(words) == ncolumns and ncolumns == 6):
@@ -127,7 +139,7 @@ class observation:
                 
         fObs.close()
         
-        #Deal with order overlap, or do any trimming?
+        #Optionally deal with order overlap, or do any trimming?
         
         #Sort the observation so wavelength is always increasing
         self.ind = np.argsort(self.wlOrig)
@@ -223,6 +235,10 @@ class mask:
         self.iuse = tmpMask[5, self.ind].astype(int)
 
         #For speed just reduce the mask to the mask.iuse != 0 parts here
+        self.prune()
+
+    def prune(self):
+        #Restrict the mask to only lines flagged to be used
         ind2 = np.where(self.iuse != 0)
         self.wl = self.wl[ind2]
         self.element = self.element[ind2]
@@ -236,7 +252,42 @@ class mask:
         self.weightI = self.depth / params.normDepth
         self.weightV = self.depth*self.wl*self.lande / (params.normDepth*params.normWave*params.normLande)
         return
-        
+    
+    def removePoorLines(self, params, fracPix = 1.0, sumDepths=True):
+        #Remove nearly digenerate lines from the mask.
+        #Reject lines seperated by less than fracPix of an LSD (velocity) pixel.
+        depthCutoff = 0.6
+        nTrimmed = 0
+        for l in range(1,self.wl.shape[0]):
+            #This is relativly inefficent but handels unsorted line masks
+            #and lines with multiple bad blends.
+            if self.iuse[l] == 1:
+                deltas = np.abs(self.wl[l] - self.wl)/self.wl[l]*c
+                iClose = np.nonzero((deltas < params.pixVel*fracPix) & (self.iuse == 1))[0]
+                if iClose.shape[0] > 1:
+                    #If other lines are too close to the current line
+                    self.iuse[iClose] = 0
+                    deepestLine = np.argmax(self.depth[iClose])
+                    self.iuse[iClose[deepestLine]] = 1
+                    
+                    #If we want to sum line depths, limit the maximum depth lines 
+                    #can sum to, as a very rough approximation for saturation.
+                    if sumDepths:
+                        summedDepth = np.sum(self.depth[iClose])
+                        if summedDepth < depthCutoff:
+                            self.depth[iClose[deepestLine]] = summedDepth
+                        else:
+                            self.depth[iClose[deepestLine]] = max(depthCutoff, self.depth[iClose[deepestLine]])
+                    nTrimmed += np.count_nonzero(iClose) - 1
+        if nTrimmed > 0:
+            print('Modified line mask, removed {:n} too closely spaced lines'.format(nTrimmed))
+
+        #Apply the changes to the line mask
+        self.prune()
+
+        return
+    
+    
 class prof:
     def __init__(self, params):
         self.vel = np.arange(params.velStart, params.velEnd+params.pixVel, params.pixVel, )
@@ -253,15 +304,21 @@ class prof:
         self.specN2 = np.zeros(self.npix)
         self.specSigN2 = np.zeros(self.npix)
 
-    def save(self, fname):
+    def save(self, fname, header=None):
+        #Save the LSD profile to a file.
         #finally convert I from 1-I to full I/Ic units at output
         oFile = open(fname, 'w')
-        starName = 'STAR'
-        oFile.write('***Reduced spectrum of \'{:<8s}\'\n'.format(starName))
+        if header == None:
+            starName = 'STAR'
+            oFile.write('***Reduced spectrum of \'{:<8s}\'\n'.format(starName))
+        else:
+            oFile.write(header)
+        
         oFile.write(' {:d} 6\n'.format(self.npix))
         for i in range(self.npix):
-            oFile.write('{:>12.6f} {:>13.6e} {:>13.6e} {:>13.6e} {:>13.6e} {:>13.6e} {:>13.6e}\n'.format(self.vel[i], 1.-self.specI[i], self.specSigI[i], self.specV[i], self.specSigV[i], self.specN1[i], self.specSigN1[i]))
-            
+            oFile.write('{:>12.6f} {:>13.6e} {:>13.6e} {:>13.6e} {:>13.6e} {:>13.6e} {:>13.6e}\n'.format(
+                self.vel[i], 1.-self.specI[i], self.specSigI[i], self.specV[i],
+                self.specSigV[i], self.specN1[i], self.specSigN1[i]))
         oFile.close()
 
     def lsdplot(self,fname):
@@ -329,70 +386,6 @@ def buildInvSig2(obs):
     sparseS2 = scipy.sparse.diags(tmp, offsets=0)
     
     return sparseS2
-
-
-def buildMold(obs, mask, prof, interpMode):
-    #Build the nObsPix x nProfPix matrix of weights connecting LSD pixels to observed pixels
-    #Builds I and V matrices at once (more efficient)
-    
-    #outer loop over observations version, simpler to write but maybe slower
-    maskMI = np.zeros((obs.wl.shape[0], prof.npix))
-    maskMV = np.zeros((obs.wl.shape[0], prof.npix))
-    #Sparse matrices are generally slower here due to the overhead accessing entries
-
-    #calculate wavelengths for the profile at each line in the mask here, since it is reusable
-    #wlProf = prof.vel/c*mask.wl[l] + mask.wl[l]
-    wlProfA = np.outer(prof.vel/c, mask.wl) + np.tile(mask.wl, (prof.npix,1))  #(prof.npix, mask.wl.shape)
-
-    obs.nPixUsed = 0
-    #Nearest neighbor 'interpolation' of model spec on to observed spec
-    if(interpMode == 0):
-        for i in range(obs.wl.shape[0]):
-            #Get lines in the mask that will contribute to this pixel
-            iMaskRange = np.where( (wlProfA[0,:] < obs.wl[i]) & (wlProfA[-1,:] > obs.wl[i]) )
-
-            if(iMaskRange[0].shape[0] > 0):
-                obs.nPixUsed += 1
-        
-            for l in iMaskRange[0]:
-                #LSD profile in wavelength space, for this line in the mask
-                #pre-calculating this saves some time, since we can re-use some lines
-                wlProf = wlProfA[:,l]  
-
-                #Use the nearest neighbor model point (column in M) for the observed point (row in M)
-                iProf = np.argmin(np.abs(wlProf - obs.wl[i]))
-                
-                maskMI[i,iProf] += mask.weightI[l]
-                maskMV[i,iProf] += mask.weightV[l]
-                
-    #Linear interpolation of model spec on to observed spec
-    elif(interpMode == 1):
-        for i in range(obs.wl.shape[0]):
-            #Get lines in the mask that will contribute to this pixel
-            iMaskRange = np.where( (wlProfA[0,:] < obs.wl[i]) & (wlProfA[-1,:] > obs.wl[i]) )
-        
-            if(iMaskRange[0].shape[0] > 0):
-                obs.nPixUsed += 1
-            
-            for l in iMaskRange[0]:
-                #LSD profile in wavelength space, for this line in the mask
-                #pre-calculating this saves some time, since we can re-use some lines
-                wlProf = wlProfA[:,l]  
-        
-                #Linearly interpolate between two model points (columns in M) for the observed point (row in M)
-                #iProf = np.where(wlProf > obs.wl[i])[0][0] 
-                #iProf = np.argmax(wlProf > obs.wl[i])  #generates array of bool, returns 1st true
-                iProf = np.searchsorted(wlProf, obs.wl[i], side='right') #relies on ordered wlProf but is faster
-                
-                wlWeight = (obs.wl[i] - wlProf[iProf-1])/(wlProf[iProf]-wlProf[iProf-1])
-                
-                maskMI[i,iProf-1] += mask.weightI[l]*(1.-wlWeight)
-                maskMI[i,iProf] += mask.weightI[l]*wlWeight
-                
-                maskMV[i,iProf-1] += mask.weightV[l]*(1.-wlWeight)
-                maskMV[i,iProf] += mask.weightV[l]*wlWeight
-
-    return maskMI, maskMV
 
 
 def buildM(obs, mask, prof, interpMode):
@@ -647,9 +640,10 @@ def zeroProf(prof, profErr, iContCorr):
 def estimateLineRange(profI, profSigI):
     #estimate the continuum from a 20 point average, using either end of the profile
     pad = 2
-    approxCont = np.average((profI[pad:20+pad], profI[-20-pad:-pad]))
-    approxErr = np.std((profI[pad:20+pad], profI[-20-pad:-pad]))
-    meanErr = np.average((profSigI[pad:20+pad], profSigI[-20-pad:-pad]))
+    contPix = 20
+    approxCont = np.average((profI[pad:contPix+pad], profI[-contPix-pad:-pad]))
+    approxErr = np.std((profI[pad:contPix+pad], profI[-contPix-pad:-pad]))
+    meanErr = np.average((profSigI[pad:contPix+pad], profSigI[-contPix-pad:-pad]))
     scaleErr = 1.0
     if(approxErr > 1.1*meanErr):
         print('(possible Stokes I uncertainty underestimate {:.4e} vs {:.4e})'.format(approxErr, meanErr))
@@ -658,7 +652,7 @@ def estimateLineRange(profI, profSigI):
     #Get 4 sigma below (above) continuum points
     iTheorIn = np.where(profI[pad:-pad] > approxCont + 4.*scaleErr*profSigI[pad:-pad])[0] + pad
     iTheorOut = np.where(profI[pad:-pad] <= approxCont + 4.*scaleErr*profSigI[pad:-pad])[0] + pad
-
+    
     return iTheorIn, iTheorOut
 
 def nullTest(prof):

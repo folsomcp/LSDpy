@@ -47,6 +47,11 @@ The most important point is that the LSD profile should theoretically behave lik
 ### Remove continuum polarization
 This removes continuum polarization in the Stokes V profile by forcing the average of Stokes V to be 0.  Set the flag to 1 to enable this, 0 to disable.  In a well behaved observation this should not be necessary, but instrumental or data reduction errors may introduce an offset in Stokes V.  Be a bit careful with this, as it is usually an imperfect correction for an error that occurred elsewhere.
 
+### Remove very closely spaced lines
+Flag to modify the mask by removing lines that are too closely spaced (by default less than 1 pixel apart), 1 = yes, 0 = no.
+
+Very closely spaced lines in the mask can cause problems.  Most notably, in real spectra strong lines do not add linearly due to saturation effects.  Turing this on can help by removing the multiple components of strong lines.  For weaker lines (a depth < 0.6 by default) the depths are added to make one deeper line (up to a depth of 0.6 by default), effectively merging them.  In most cases this provides a small improvement to the LSD profile.  
+
 ### Sigma clip to reject bad pixels
 A sigma clipping routine can be applied to the observation, if the number of iterations is 0 it is disable entirely.  Uses the sigma value (number of sigma discrepancy between a model and observed pixel) beyond which a pixel is rejected, and and a number of iterations to repeat the sigma clipping.  
 
@@ -88,3 +93,16 @@ The continuum polarization level is printed for V and N "note, profile continuum
 An estimate of the velocity range that the line spans is printed "line range estimate".  It is based on Stokes I, if the line shape or continuum are particularly strange then the estimate may be wrong.  The line range is taken to be where the profile drops 4 sigma below the continuum level.  The continuum level is estimated from the first and last 20 points in the profile.  The line range is used to compute detections statistics.
 
 The detections statistics are printed for Stokes V, and then N.  The chi^2 of the null model (a flat line) fit to the observation, for the portion inside the line, is printed.  The code also prints the detection probability, and false alarm probability, for that chi^2.  The detection probability is the probability that the null model disagrees with the observation.  Then the code prints the same information calculated outside the line, as a diagnostic test.  This is then repeated for the null.  When operating well, there would be a detection inside the line for Stokes V, but no detection outside the line in V, inside the line in N or outside the line in N.  Currently the code uses detection probabilities of 0.0-0.99 as "non-detection", 0.99-0.9999 as "marginal detections", and > 0.9999 as "definite detections". 
+
+
+## Change Log
+
+0.4.0 Added a feature for removing lines from a mask that are very close together.  Added support for calling LSDpy as a function in other Python scripts.  The comment line in the header of .s spectra should now be included in the LSD profile, alternately spectra with no header are supported.
+
+0.3.3 Changed to using Python 3 by default.
+
+0.3.2 Added the option of using command line parameters for the observation, mask, and output profile files.
+
+0.3.1 Added support for observed spectra files with only 3 columns (only Stokes I).
+
+0.3.0 Optimized the code some.  Added a basic option for sigma clipping for bad observed pixels.  Added an experimental option for nearest neighbour interpolation in generating the model spectrum.  Added some error checking.

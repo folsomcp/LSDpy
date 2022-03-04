@@ -1,6 +1,6 @@
 #Controls for the LSD code.  Order of lines matters, # are comments
 # Input observation
-hd219134_19jun16_v_01.s
+hd219134_19jun16_v_01.spec
 # Line mask
 mask-4500g40-0.1-trim3.dat
 # start and end velocity (km/s) for LSD profile
@@ -10,6 +10,8 @@ mask-4500g40-0.1-trim3.dat
 # mask/profile normalization parameters (depth, Lande factor, wavelength(nm))
 0.4  1.2  600.
 # remove continuum polarization in LSD profile? (0=no, 1=yes)
+1
+# Remove very closely spaced lines from the mask
 1
 # sigma clip to reject bad pixels (sigma level, iterations 0 = no clipping done)
 # the sigma level should be very large, to avoid rejecting too many points
