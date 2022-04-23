@@ -97,6 +97,8 @@ The detections statistics are printed for Stokes V, and then N.  The chi^2 of th
 
 ## Change Log
 
+0.4.1 Now saves the line mask normalizing depth walvength and Lande factor to the header of the LSD profile.  This is added to the end of any existing header from the observation file.
+
 0.4.0 Added a feature for removing lines from a mask that are very close together.  Added support for calling LSDpy as a function in other Python scripts.  The comment line in the header of .s spectra should now be included in the LSD profile, alternately spectra with no header are supported.
 
 0.3.3 Changed to using Python 3 by default.

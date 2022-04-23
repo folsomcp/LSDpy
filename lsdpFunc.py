@@ -304,15 +304,27 @@ class prof:
         self.specN2 = np.zeros(self.npix)
         self.specSigN2 = np.zeros(self.npix)
 
-    def save(self, fname, header=None):
+    def save(self, fname, header=None, params=None):
         #Save the LSD profile to a file.
         #finally convert I from 1-I to full I/Ic units at output
         oFile = open(fname, 'w')
-        if header == None:
-            starName = 'STAR'
-            oFile.write('***Reduced spectrum of \'{:<8s}\'\n'.format(starName))
+
+        #Add the mask normalizing parameters to the header
+        if params == None:
+            headerAdd = ''
         else:
-            oFile.write(header)
+            sFormat = ' normalizing: d={:5.3f} lande={:5.3f} wl={:6.1f} (I norm weight {:5.3f}, V norm weight {:7.3f})\n'
+            headerAdd = sFormat.format(params.normDepth, params.normLande,
+                                       params.normWave, params.normDepth,
+                                       params.normDepth*params.normLande
+                                       *params.normWave)
+        
+        if header == None:
+            #The observation reading function will usually provide a placeholder
+            #header of '#\n' if the file had no header, so this may be unused. 
+            oFile.write('***LSD profile' + headerAdd)
+        else:
+            oFile.write(header.strip() + headerAdd)
         
         oFile.write(' {:d} 6\n'.format(self.npix))
         for i in range(self.npix):

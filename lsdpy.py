@@ -2,7 +2,7 @@
 #
 # Main LSD code
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 import numpy as np
 #from scipy.sparse import diags, issparse, csr_matrix, csc_matrix
@@ -130,7 +130,7 @@ def main(observation=None, mask=None, outName=None, velStart=None, velEnd=None, 
     #check for detections
     lsdpFunc.nullTest(prof)
     
-    prof.save(outputProfName, obs.header)
+    prof.save(outputProfName, obs.header, params)
     if(params.fLSDPlotImg != 0):
         prof.lsdplot(params.outPlotImgName)
     
