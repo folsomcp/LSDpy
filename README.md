@@ -76,9 +76,7 @@ The code can optionally plot the LSD profile with matplotlib.  The values are a 
 
 
 ## Terminal output
-(This may be subject to change as the code evolves)
-
-A brief description of some of the text output to the terminal.  The output is mostly self explanatory, I hope.
+A partial description of some text output to the terminal.  The output is mostly self explanatory, I hope.
 
 The average pixel sized of the observed spectrum, in velocity units, is provided.
 
@@ -96,6 +94,8 @@ The detections statistics are printed for Stokes V, and then N.  The chi^2 of th
 
 
 ## Change Log
+
+0.4.2 Improved support for calling LSDpy as a function inside another Python script.  Now all parameters can be set through function arguments (making inlsd.dat optional for scripts).
 
 0.4.1 Now saves the line mask normalizing depth walvength and Lande factor to the header of the LSD profile.  This is added to the end of any existing header from the observation file.
 
