@@ -10,9 +10,33 @@ c = scipy.constants.c*1e-3
 class paramsLSD:
     def __init__(self, fname):
         #Read in most information controlling how the program runs
-        
-        infile = open(fname, 'r')
 
+        #Check if the input file exists, if it doesn't then return some
+        #reasonable default values where possible.
+        #(Other values are intended to be set by the call to lsdpy.main() )
+        try:
+            infile = open(fname, 'r')
+        except FileNotFoundError:
+            self.inObs = None
+            self.inMask = None
+            self.velStart = None
+            self.velEnd = None
+            self.pixVel = None
+            self.normDepth = None
+            self.normLande = None
+            self.normWave = None
+            self.removeContPol = 1
+            self.trimMask = 0
+            self.sigmaClipIter = 0
+            self.sigmaClip = 500.
+            self.interpMode = 1
+            self.fSaveModelSpec = 0
+            self.outModelSpecName = 'outSpec.dat',
+            self.fLSDPlotImg = 1
+            self.fSavePlotImg = 0
+            self.outPlotImgName = 'figProf.pdf'
+            return
+        
         i = 0
         for line in infile:
             if (len(line) <= 1):
@@ -61,7 +85,7 @@ class paramsLSD:
         if(i < 5):
             print('ERROR: incomplete information read from {:}'.format(fname))
         
-            
+
 class observation:
     def __init__(self, fname):
         #Read in the observed spectrum and save it

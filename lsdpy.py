@@ -2,63 +2,117 @@
 #
 # Main LSD code
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 import numpy as np
-#from scipy.sparse import diags, issparse, csr_matrix, csc_matrix
-#from numpy.linalg import inv
 import lsdpFunc as lsdpFunc
 
 import scipy.constants
 c = scipy.constants.c*1e-3
 
-def main(observation=None, mask=None, outName=None, velStart=None, velEnd=None, velPixel=None, normDepth=None, normLande=None, normWave=None):
+def main(observation=None, mask=None, outName='prof.dat',
+         velStart=None, velEnd=None, velPixel=None, 
+         normDepth=None, normLande=None, normWave=None,
+         removeContPol=None, trimMask=None, sigmaClipIter=None, sigmaClip=None, 
+         interpMode=None, fSaveModelS=None, outModelName=None,
+         fLSDPlotImg=None, fSavePlotImg=None, outPlotImgName=None):
     """Run the LSD code.  
+    
+    Any arguments not specified will be read from the file inlsd.dat.
+    The file inlsd.dat is optional, but if the file dose not exist and 
+    any arguments are 'None', the program will error and halt.
+    Some arguments have default values, which will be used if they are not
+    explicitly specified and if the inlsd.dat file is missing.
+    
     Arguments are: 
-    observation -- name of a spectrum file
-    mask        -- name of the LSD mask file
-    outName     -- name of the output LSD profile
-    velStart    -- float, starting velocity for the profile
-    velEnd      -- float, ending  velocity
-    velPixel    -- float, velocity pixel size
-    normDepth   -- float, normalizing line depth
-    normLande   -- float, normalizing effective Lande factor
-    normWave    -- float, normalizing wavelength
-    Any arguments not specified will be read from the file inlsd.dat
+    :param observation:   name of the input observed spectrum file
+    :param mask:          name of the input LSD mask file
+    :param outName:       name of the output LSD profile (Default = 'prof.dat')
+    :param velStart:      float, starting velocity for the LSD profile (km/s)
+    :param velEnd:        float, ending  velocity (km/s)
+    :param velPixel:      float, velocity pixel size (km/s)
+    :param normDepth:     float, normalizing line depth
+    :param normLande:     float, normalizing effective Lande factor
+    :param normWave:      float, normalizing wavelength
+    :param removeContPol: int, flag for whether continuum polarization is 
+                          subtracted from the LSD profile (0=no, 1=yes)
+                          (Default = 1)
+    :param trimMask:      int, flag for whether very closely spaced lines 
+                          should be removed from the line mask (0=no, 1=yes)
+                          (Default = 0)
+    :param sigmaClipIter: int, number of iterations for sigma clipping, 
+                          rejecting possible bad pixels based on the fit to
+                          Stokes I. Set to 0 for no sigma clipping.
+                          (Default = 0, no sigma clipping)
+    :param sigmaClip:     float, if sigma clipping, reject pixels where the
+                          observation differs from the model by more than this
+                          number of sigma.  Should be a large value so only very
+                          bad pixels are rejected.
+                          (Default = 500.)
+    :param interpMode:    int, mode for interpolating the model on to the
+                          observation during LSD 0 = nearest neighbour,
+                          1 = linear interpolation.
+                          (Default = 1)
+    :param fSaveModelS:   int, flag for whether to save a copy of the 'model'
+                          spectrum from LSD (i.e. the line mask convolved with
+                          the LSD profile).
+                          (Default = 0)
+    :param outModelName:  name of the file for the output model spectrum (if saved)
+                          (Default = 'outSpec.dat')
+    :param fLSDPlotImg:   int, flag for whether to plot the LSD profile
+                          (using matplotlib) (0=no, 1=yes)
+                          (Default = 1)
+    :param fSavePlotImg:  int, flag for whether to save the plot of the 
+                          LSD profile (0=no, 1=yes)
+                          Default = 0)
+    :param outPlotImgName: name of the plotted figure of the LSD profile (if saved)
+                          (Default = 'figProf.pdf')
+    :rtype: Returns the calculated LSD profile, as a tuple of numpy arrays
+            (velocity, Stokes I, error on I, Stokes V, error on V,
+            Null 1, error on Null 1).
     """
     
-    #Read input data and observation
+    #Read input data
     params = lsdpFunc.paramsLSD('inlsd.dat')
     
-    #Read command line arguments (optional)
-    if(observation == None or mask == None or outName == None):
-        import argparse
-        parser = argparse.ArgumentParser(description='Run Least Squares Deconvolution, most input parameters are in read from the file inlsd.dat.')
-        parser.add_argument("observation", nargs='?', default='', help='Observed spectrum file. If none is given, defaults to the value specificed in inlsd.dat')
-        parser.add_argument("output", nargs='?', default='prof.dat', help='Output file name for the LSD profile. If none is given, defaults to prof.dat')
-        parser.add_argument("-m", "--mask",dest='mask',  default='', help='Mask for the LSD calculation. If none is given, defaults to the value specificed in inlsd.dat')
-        args = parser.parse_args()
+    #Use passed parameters, if they exist
+    if(observation != None):    params.inObs = observation
+    if(mask != None):           params.inMask = mask
+    if(outName != None):        outputProfName = outName
+    if(velStart != None):       params.velStart = velStart
+    if(velEnd != None):         params.velEnd = velEnd
+    if(velPixel != None):       params.pixVel = velPixel
+    if(normDepth != None):      params.normDepth = normDepth
+    if(normLande != None):      params.normLande = normLande
+    if(normWave != None):       params.normWave = normWave
+    if(removeContPol != None):  params.removeContPol = removeContPol
+    if(trimMask != None):       params.trimMask = trimMask
+    if(sigmaClipIter != None):  params.sigmaClipIter = sigmaClipIter
+    if(sigmaClip != None):      params.sigmaClip = sigmaClip
+    if(interpMode != None):     params.interpMode = interpMode
+    if(fSaveModelS != None):    params.fSaveModelSpec = fSaveModelS
+    if(outModelName != None):   params.outModelSpecName = outModelName
+    if(fLSDPlotImg != None):    params.fLSDPlotImg = fLSDPlotImg
+    if(fSavePlotImg != None):   params.fSavePlotImg = fSavePlotImg
+    if(outPlotImgName != None): params.outPlotImgName = outPlotImgName
+
+    #Check if any important parameters are missing
+    if(params.inObs == None or params.inMask == None or params.velStart == None
+       or params.velEnd == None or params.pixVel == None
+       or params.normDepth == None or params.normLande == None
+       or params.normWave == None):
+        print('WARNING: missing inlsd.dat!')
+        print('ERROR: missing a required input value in lsdpy.main()!')
+        print('Halting...')
+        import sys
+        sys.exit()
     
-        if args.observation != '':
-            params.inObs = args.observation
-        outputProfName = args.output
-        if args.mask != '':
-            params.inMask = args.mask
-        
-    if(observation != None): params.inObs = observation
-    if(mask != None): params.inMask = mask
-    if(outName != None): outputProfName = outName
-    if(velStart != None): params.velStart = velStart
-    if(velEnd != None): params.velEnd = velEnd
-    if(velPixel != None): params.pixVel = velPixel
-    if(normDepth != None): params.normDepth = normDepth
-    if(normLande != None): params.normLande = normLande
-    if(normWave != None): params.normWave = normWave
-    
+    #Read the observation
     obs = lsdpFunc.observation(params.inObs)
     # Work in shifted I units (i.e. 1-I => continuum @ 0)
     obs.specI = 1.-obs.specI
     
+    #Read the line mask
     mask = lsdpFunc.mask(params.inMask)
     #remove very closely spaced lines in the mask
     if params.trimMask != 0: mask.removePoorLines(params)
@@ -140,4 +194,22 @@ def main(observation=None, mask=None, outName=None, velStart=None, velEnd=None, 
 
 # Boilerplate for running the main function #
 if __name__ == "__main__":
-    main()
+
+    #Read command line arguments (optional)
+    import argparse
+    parser = argparse.ArgumentParser(description='Run Least Squares Deconvolution, most input parameters are in read from the file inlsd.dat.')
+    parser.add_argument("observation", nargs='?', default='', help='Observed spectrum file. If none is given, defaults to the value specified in inlsd.dat')
+    parser.add_argument("output", nargs='?', default='prof.dat', help='Output file name for the LSD profile. If none is given, defaults to prof.dat')
+    parser.add_argument("-m", "--mask",dest='mask',  default='', help='Mask for the LSD calculation. If none is given, defaults to the value specified in inlsd.dat')
+    args = parser.parse_args()
+
+    observation = None
+    if args.observation != '':
+        observation = args.observation
+    outName = args.output
+    mask = None
+    if args.mask != '':
+        mask = args.mask
+    
+    #Run the LSD code
+    main(observation=observation, outName=outName, mask=mask)
