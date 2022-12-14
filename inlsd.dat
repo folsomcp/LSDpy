@@ -19,6 +19,6 @@ mask-4500g40-0.1-trim3.dat
 # Interpolation mode for fitting model to observation (1=linear 0=nearest)
 1
 # Save LSD model spectrum? (0=no, 1=yes),  file name
-1  outModelSpec.dat
+0  outModelSpec.dat
 # Plot LSD profile?  Save plot? (0=no, 1=yes), file name (.png .eps or .pdf)
 1  0  prof.png

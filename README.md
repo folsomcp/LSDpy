@@ -95,6 +95,8 @@ The detections statistics are printed for Stokes V, and then N.  The chi^2 of th
 
 ## Change Log
 
+0.4.3 When calling LSDpy as function inside another Python script, added an option to return the model 'spectrum' (convolution of the LSD profile and line mask).
+
 0.4.2 Improved support for calling LSDpy as a function inside another Python script.  Now all parameters can be set through function arguments (making inlsd.dat optional for scripts).
 
 0.4.1 Now saves the line mask normalizing depth walvength and Lande factor to the header of the LSD profile.  This is added to the end of any existing header from the observation file.

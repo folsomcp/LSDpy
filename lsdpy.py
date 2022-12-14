@@ -2,7 +2,7 @@
 #
 # Main LSD code
 
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 
 import numpy as np
 import lsdpFunc as lsdpFunc
@@ -14,7 +14,7 @@ def main(observation=None, mask=None, outName='prof.dat',
          velStart=None, velEnd=None, velPixel=None, 
          normDepth=None, normLande=None, normWave=None,
          removeContPol=None, trimMask=None, sigmaClipIter=None, sigmaClip=None, 
-         interpMode=None, fSaveModelS=None, outModelName=None,
+         interpMode=None, fSaveModelS=None, outModelName='',
          fLSDPlotImg=None, fSavePlotImg=None, outPlotImgName=None):
     """Run the LSD code.  
     
@@ -55,10 +55,13 @@ def main(observation=None, mask=None, outName='prof.dat',
                           (Default = 1)
     :param fSaveModelS:   int, flag for whether to save a copy of the 'model'
                           spectrum from LSD (i.e. the line mask convolved with
-                          the LSD profile).
+                          the LSD profile).  If != 0 this will also return the
+                          'model' spectrum from the function call.
                           (Default = 0)
-    :param outModelName:  name of the file for the output model spectrum (if saved)
-                          (Default = 'outSpec.dat')
+    :param outModelName:  name of the file for the output model spectrum 
+                          (if saved) If this is '' and fSaveModelS != 0 a model 
+                          will be generated but not saved to file.
+                          (Default = '')
     :param fLSDPlotImg:   int, flag for whether to plot the LSD profile
                           (using matplotlib) (0=no, 1=yes)
                           (Default = 1)
@@ -162,7 +165,7 @@ def main(observation=None, mask=None, outName='prof.dat',
     
     #Run the actual fitting
     #This is the major function, which does the fitting and takes most time
-    chi2I, chi2V, chi2N1 = lsdpFunc.lsdFitSigmaClip(obs, mask, prof, params)
+    chi2I, chi2V, chi2N1, modelSpec = lsdpFunc.lsdFitSigmaClip(obs, mask, prof, params)
     
     #Print chi^2, scale error bars if chi^2 is larger,
     #and remove continuum polarization if desired
@@ -187,8 +190,12 @@ def main(observation=None, mask=None, outName='prof.dat',
     prof.save(outputProfName, obs.header, params)
     if(params.fLSDPlotImg != 0):
         prof.lsdplot(params.outPlotImgName)
-    
-    return (prof.vel, prof.specI, prof.specSigI, prof.specV, prof.specSigV,
+        
+    if(params.fSaveModelSpec != 0):
+            return (prof.vel, 1.-prof.specI, prof.specSigI, prof.specV, 
+                    prof.specSigV, prof.specN1, prof.specSigN1, modelSpec)
+
+    return (prof.vel, 1.-prof.specI, prof.specSigI, prof.specV, prof.specSigV,
             prof.specN1, prof.specSigN1)
 
 

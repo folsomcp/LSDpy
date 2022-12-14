@@ -525,15 +525,15 @@ def saveModelSpec(outModelSpecName, prof, MI, MV, obsWl):
     # From below, model the spectrum as a convolution of a line mask M 
     # and a line profile Z:  Y = M.Z
 
-    if (outModelSpecName != ''):
-        specI = MI.dot(prof.specI)
-        specV = MV.dot(prof.specV)
-        specN1 = MV.dot(prof.specN1)
+    specI = 1. - MI.dot(prof.specI)
+    specV = MV.dot(prof.specV)
+    specN1 = MV.dot(prof.specN1)
         
+    if (outModelSpecName != ''):
         outFile = open(outModelSpecName, 'w')
         for i in range(specI.shape[0]):
-            outFile.write('{:10f} {:11e} {:11e} {:11e}\n'.format(obsWl[i], 1.-specI[i], specV[i], specN1[i]))
-    
+            outFile.write('{:10f} {:11e} {:11e} {:11e}\n'.format(obsWl[i], specI[i], specV[i], specN1[i]))
+    return (obsWl, specI, specV, specN1)
 
 
 def lsdFit(obs, mask, prof, interpMode):
@@ -631,11 +631,12 @@ def lsdFitSigmaClip(obs, mask, prof, params):
         i += 1
 
     #Optionally save the model after sigma clipping is done
-    if(params.fSaveModelSpec == 1):
+    if(params.fSaveModelSpec != 0):
         print('saving model spectrum to {:} ...'.format(params.outModelSpecName))
-        saveModelSpec(params.outModelSpecName, prof, MI, MV, obs.wl)
-
-    return chi2I, chi2V, chi2N1
+        modelSpec = saveModelSpec(params.outModelSpecName, prof, MI, MV, obs.wl)
+        return chi2I, chi2V, chi2N1, modelSpec
+    
+    return chi2I, chi2V, chi2N1, None
 
 
 def scaleErr(profErr, chi2, obsUsed, profNpix):
