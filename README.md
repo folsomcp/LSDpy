@@ -1,5 +1,5 @@
 # LSDpy
-A Least Squares Deconvolution in Python for analysis of stellar spectra.
+Least Squares Deconvolution in Python for analysis of stellar spectra.
 
 ## Basic use
 The main executable is lsdpy.py, there are a set of control parameters specified in the file inlsd.dat
@@ -10,7 +10,7 @@ You can also run the code from the command line like:
 ```
 python lsdpy.py [observation_file] [output_profile] -m [line_mask]
 ```
-Any other parameters will be still read from the inlsd.dat file.  The observation and line mask can optionally be specified with inlsd.dat rather than the command line.
+Other parameters will be still read from the inlsd.dat file.  The observation and line mask can optionally be specified with inlsd.dat rather than the command line.
 
 ## Input parameters
 These are specified in the inlsd.dat file.
@@ -94,6 +94,8 @@ The detections statistics are printed for Stokes V, and then N.  The chi^2 of th
 
 
 ## Change Log
+
+0.4.4 Added an option to save the LSD model 'spectrum' with a command line argument.  Also fixed a bug where the model spectrum wasn't saved even though the flag in inlsd.dat was set.
 
 0.4.3 When calling LSDpy as function inside another Python script, added an option to return the model 'spectrum' (convolution of the LSD profile and line mask).
 

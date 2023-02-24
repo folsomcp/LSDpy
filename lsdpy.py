@@ -2,7 +2,7 @@
 #
 # Main LSD code
 
-__version__ = "0.4.3"
+__version__ = "0.4.4"
 
 import numpy as np
 import lsdpFunc as lsdpFunc
@@ -205,9 +205,10 @@ if __name__ == "__main__":
     #Read command line arguments (optional)
     import argparse
     parser = argparse.ArgumentParser(description='Run Least Squares Deconvolution, most input parameters are in read from the file inlsd.dat.')
-    parser.add_argument("observation", nargs='?', default='', help='Observed spectrum file. If none is given, defaults to the value specified in inlsd.dat')
-    parser.add_argument("output", nargs='?', default='prof.dat', help='Output file name for the LSD profile. If none is given, defaults to prof.dat')
+    parser.add_argument("observation", nargs='?', default='', help='Observed spectrum file. If none is given, defaults to the filename specified in inlsd.dat')
+    parser.add_argument("output", nargs='?', default='prof.dat', help='Name for the LSD profile file. If none is given, defaults to prof.dat')
     parser.add_argument("-m", "--mask",dest='mask',  default='', help='Mask for the LSD calculation. If none is given, defaults to the value specified in inlsd.dat')
+    parser.add_argument("-o", "--outSpec",dest='outSpec',  default=None, help="Save a copy of the model 'spectrum' (convolution of the line mask and LSD profile) to this file. If none is given, defaults to the value specified in inlsd.dat")
     args = parser.parse_args()
 
     observation = None
@@ -217,6 +218,13 @@ if __name__ == "__main__":
     mask = None
     if args.mask != '':
         mask = args.mask
+    if args.outSpec is not None:
+        fSaveModelS = 1
+        outModelName = args.outSpec
+    else:
+        fSaveModelS = None
+        outModelName = None
     
     #Run the LSD code
-    main(observation=observation, outName=outName, mask=mask)
+    main(observation=observation, outName=outName, mask=mask,
+         fSaveModelS=fSaveModelS, outModelName=outModelName)
