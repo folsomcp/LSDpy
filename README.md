@@ -95,6 +95,8 @@ The detections statistics are printed for Stokes V, and then N.  The chi^2 of th
 
 ## Change Log
 
+0.4.5 Added an __init__.py file, for more convenient importing LSDpy as a package.
+
 0.4.4 Added an option to save the LSD model 'spectrum' with a command line argument.  Also fixed a bug where the model spectrum wasn't saved even though the flag in inlsd.dat was set.
 
 0.4.3 When calling LSDpy as function inside another Python script, added an option to return the model 'spectrum' (convolution of the LSD profile and line mask).

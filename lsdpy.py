@@ -2,10 +2,13 @@
 #
 # Main LSD code
 
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 
 import numpy as np
-import lsdpFunc as lsdpFunc
+try:
+    import LSDpy.lsdpFunc as lsdpFunc
+except ModuleNotFoundError:
+    import lsdpFunc as lsdpFunc
 
 import scipy.constants
 c = scipy.constants.c*1e-3
