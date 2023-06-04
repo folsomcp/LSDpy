@@ -75,7 +75,8 @@ def main(observation=None, mask=None, outName='prof.dat',
                           (Default = 'figProf.pdf')
     :rtype: Returns the calculated LSD profile, as a tuple of numpy arrays
             (velocity, Stokes I, error on I, Stokes V, error on V,
-            Null 1, error on Null 1).
+            Null 1, error on Null 1) and a text string for the header.
+            Optionally also returns output model spectrum as a tuple of arrays.
     """
     
     #Read input data
@@ -190,16 +191,17 @@ def main(observation=None, mask=None, outName='prof.dat',
     #check for detections
     lsdpFunc.nullTest(prof)
     
-    prof.save(outputProfName, obs.header, params)
+    #Save and return the results
+    headerTxt = prof.save(outputProfName, obs.header, params)
     if(params.fLSDPlotImg != 0):
         prof.lsdplot(params.outPlotImgName)
         
     if(params.fSaveModelSpec != 0):
             return (prof.vel, 1.-prof.specI, prof.specSigI, prof.specV, 
-                    prof.specSigV, prof.specN1, prof.specSigN1, modelSpec)
+                    prof.specSigV, prof.specN1, prof.specSigN1, headerTxt, modelSpec)
 
     return (prof.vel, 1.-prof.specI, prof.specSigI, prof.specV, prof.specSigV,
-            prof.specN1, prof.specSigN1)
+            prof.specN1, prof.specSigN1, headerTxt)
 
 
 # Boilerplate for running the main function #

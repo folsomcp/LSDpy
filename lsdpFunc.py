@@ -346,9 +346,10 @@ class prof:
         if header == None:
             #The observation reading function will usually provide a placeholder
             #header of '#\n' if the file had no header, so this may be unused. 
-            oFile.write('***LSD profile' + headerAdd)
+            headerTxt = '***LSD profile' + headerAdd
         else:
-            oFile.write(header.strip() + headerAdd)
+            headerTxt = header.strip() + headerAdd
+        oFile.write(headerTxt)
         
         oFile.write(' {:d} 6\n'.format(self.npix))
         for i in range(self.npix):
@@ -356,6 +357,7 @@ class prof:
                 self.vel[i], 1.-self.specI[i], self.specSigI[i], self.specV[i],
                 self.specSigV[i], self.specN1[i], self.specSigN1[i]))
         oFile.close()
+        return headerTxt
 
     def lsdplot(self,fname):
         import matplotlib.pyplot as plt
