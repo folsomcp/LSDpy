@@ -231,7 +231,7 @@ mask.dat
 # Save LSD model spectrum? (0=no, 1=yes),  file name
 0  outModelSpec.dat
 # Plot LSD profile?  Save plot? (0=no, 1=yes), file name (.png .eps or .pdf)
-1  0  prof.png
+1  0  prof.pdf
 """
     inFile = open(inFname, 'w')
     inFile.write(defaultText)
