@@ -1,7 +1,7 @@
 #LSD helper functions
 import numpy as np
 import scipy.special as specialf
-from scipy.sparse import diags, spdiags, dia_matrix, csr_matrix, csc_matrix, issparse, coo_matrix, dok_matrix, lil_matrix
+from scipy.sparse import diags, csr_matrix
 from numpy.linalg import inv
 
 import scipy.constants
@@ -39,7 +39,7 @@ class paramsLSD:
         
         i = 0
         for line in infile:
-            if (len(line) <= 1):
+            if (len(line.strip()) < 1):
                 continue
             if (line.strip()[0] != '#'):
                 if (i==0):
@@ -114,9 +114,7 @@ class observation:
                         print('Apparent Stokes I only spectrum')
                         print('Generating place holder V and N columns')
                     else:
-                        print('{:} column spectrum: unknown format!'.format(ncolumns))
-                        import sys
-                        sys.exit()
+                        raise ValueError('Reading {:} column spectrum {:}: unknown format!'.format(ncolumns, fname))
             if len(words) == ncolumns:
                 if ncolumns == 6:
                     if(float(words[1]) > 0. and float(words[5]) > 0.):

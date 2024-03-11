@@ -1,19 +1,53 @@
 # LSDpy
 Least Squares Deconvolution in Python for analysis of stellar spectra.
 
-## Basic use
-The main executable is lsdpy.py, there are a set of control parameters specified in the file inlsd.dat
-
-To use the code you can edit the file inlsd.dat, specify the observation file to process, the line mask to use, and any other parameters you need to modify.  Then run lsdpy.py and it should generate an output LSD profile called prof.dat.  If all went well the prof.dat file will have columns of velocity Stokes I, error on Stokes I, Stokes V, error on Stokes V, the null (N1), and errors on the null.
-
-You can also run the code from the command line like:
+## Installation
+LSDpy is available through both PyPI and Github.  To install from PyPI you can use:
 ```
-python lsdpy.py [observation_file] [output_profile] -m [line_mask]
+pip install LSDpy
+```
+Or you can download the source files, and some example input files, from [https://github.com/folsomcp/LSDpy](https://github.com/folsomcp/LSDpy).
+
+## Basic use
+### Running the installed version
+If LSDpy has been installed using pip, you can run the code from the terminal like:
+```
+lsdpy [observation_file] [output_profile] -m [line_mask]
+```
+This should generate an output LSD profile (if output name not specified defaults to prof.dat).  The output file will have columns of velocity Stokes I, error on Stokes I, Stokes V, error on Stokes V, the null (N1), and error on the null.
+You can get some additional help information with:
+```
+lsdpy -h
+```
+
+LSDpy expects an input file of control parameters called `inlsd.dat`.  If that file does not exist then the program will generate new inlsd.dat file and halt.  You will need to modify that file for your particular use case, then re-run the code.  The input parameters in inlsd.dat are described below
+
+### Using the installed package
+LSDpy can also be used inside Jupyter notebooks and other Python scripts.  If it has been installed with pip you can run the main interface function with:
+```
+import LSDpy
+prof = LSDpy.lsd(observation='obs.s', mask='mask.dat', outName='prof.dat',
+                 velStart=-200., velEnd=+200., velPixel=1.8,
+                 normDepth=0.2, normLande=1.2, normWave=500.)
+```
+This will save the LSD profile to `prof.dat`.  The function arguments should be modified for your use case.  You can print a full list of arguments from `help("LSDpy.lsd")`.  You can do further processing on the result like:
+```
+profVel, profI, profIerr, profV, profVerr, profN, profNerr, profHeader = prof
+```
+
+### Running the source files
+The main executable is lsdpy.py, in the LSDpy folder.  There are a set of control parameters specified in the file inlsd.dat
+
+You can edit the file inlsd.dat, specify the observation file to process, the line mask to use, and any other parameters you need to modify.  Then run lsdpy.py and it should generate an output LSD profile called prof.dat.  If all went well the prof.dat file will have columns of velocity, Stokes I, error on Stokes I, Stokes V, error on Stokes V, the null (N1), and errors on the null.
+
+You can run the code from the command line like:
+```
+python LSDpy/lsdpy.py [observation_file] [output_profile] -m [line_mask]
 ```
 Other parameters will be still read from the inlsd.dat file.  The observation and line mask can optionally be specified with inlsd.dat rather than the command line.
 
 ## Input parameters
-These are specified in the inlsd.dat file.
+The full set of input parameters are specified in the `inlsd.dat` file.
 
 ### Input observation
 The input observation file name, this can include a path to the file.
@@ -23,7 +57,7 @@ The observation file is assumed to have columns of either: wavelength, I/Ic, V/I
 ### Line mask
 The line mask file name, this can include a path to the file. 
 
-This should have columns of wavelength, species code (atomic number + ionization state/100, where neutrals have an ionization of 0), line depth at the line center (depth from the continuum), excitation potential of the lower level (in eV), effective Lande factor, and a flag for whether the line is used (1=use, 0=don't).  The code expects to have 1 line of header, usually the number of lines in the mask, but that is not currently read or used for anything.  The excitation potential is never actually used.  The observation wavelength needs to be in the same units as the line mask wavelengths. 
+This file should have columns of wavelength, species code (atomic number + ionization state/100, where neutrals have an ionization of 0), line depth at the line center (depth from the continuum), excitation potential of the lower level (in eV), effective Lande factor, and a flag for whether the line is used (1=use, 0=don't).  The code expects to have 1 line of header, usually the number of lines in the mask, but that is not currently read or used for anything.  The excitation potential is never actually used.  The observation wavelength needs to be in the same units as the line mask wavelengths. 
 
 ### Start and end velocity (km/s) for LSD profile
 The range that the LSD profile will span, in velocity units.  
@@ -50,7 +84,7 @@ This removes continuum polarization in the Stokes V profile by forcing the avera
 ### Remove very closely spaced lines
 Flag to modify the mask by removing lines that are too closely spaced (by default less than 1 pixel apart), 1 = yes, 0 = no.
 
-Very closely spaced lines in the mask can cause problems.  Most notably, in real spectra strong lines do not add linearly due to saturation effects.  Turing this on can help by removing the multiple components of strong lines.  For weaker lines (a depth < 0.6 by default) the depths are added to make one deeper line (up to a depth of 0.6 by default), effectively merging them.  In most cases this provides a small improvement to the LSD profile.  
+Very closely spaced lines in the mask can cause problems.  Most notably, in real spectra strong lines do not add linearly due to saturation effects.  Turning this on can help by removing the multiple components of strong lines.  For weaker lines (a depth < 0.6 by default) the depths are added to make one deeper line (up to a depth of 0.6 by default), effectively merging them.  In most cases this provides a small improvement to the LSD profile.  
 
 ### Sigma clip to reject bad pixels
 A sigma clipping routine can be applied to the observation, if the number of iterations is 0 it is disable entirely.  Uses the sigma value (number of sigma discrepancy between a model and observed pixel) beyond which a pixel is rejected, and and a number of iterations to repeat the sigma clipping.  
@@ -94,6 +128,8 @@ The detections statistics are printed for Stokes V, and then N.  The chi^2 of th
 
 
 ## Change Log
+
+0.4.6 Reogranized the files to work more conveinetly with SetupTools and the PyPI server, for eventual distribution with pip.  Renamed the lsdpy.main function to lsdpy.lsd.  Added a feature to generate a template inlsd.dat file if one does not exist, when LSDpy is ran from the command line.
 
 0.4.5 Added an \_\_init\_\_.py file, for more convenient importing LSDpy as a package.  Added the LSD file header as another return value to the lsdpy.main function.
 

@@ -2,28 +2,28 @@
 #
 # Main LSD code
 
-__version__ = "0.4.5"
+__version__ = "0.4.6"
 
 import numpy as np
 try:
-    import LSDpy.lsdpFunc as lsdpFunc
-except ModuleNotFoundError:
+    from . import lsdpFunc
+except ImportError:
     import lsdpFunc as lsdpFunc
 
 import scipy.constants
 c = scipy.constants.c*1e-3
 
-def main(observation=None, mask=None, outName='prof.dat',
-         velStart=None, velEnd=None, velPixel=None, 
-         normDepth=None, normLande=None, normWave=None,
-         removeContPol=None, trimMask=None, sigmaClipIter=None, sigmaClip=None, 
-         interpMode=None, fSaveModelS=None, outModelName='',
-         fLSDPlotImg=None, fSavePlotImg=None, outPlotImgName=None):
+def lsd(observation=None, mask=None, outName='prof.dat',
+        velStart=None, velEnd=None, velPixel=None, 
+        normDepth=None, normLande=None, normWave=None,
+        removeContPol=None, trimMask=None, sigmaClipIter=None, sigmaClip=None, 
+        interpMode=None, fSaveModelS=None, outModelName='',
+        fLSDPlotImg=None, fSavePlotImg=None, outPlotImgName=None):
     """Run the LSD code.  
     
     Any arguments not specified will be read from the file inlsd.dat.
     The file inlsd.dat is optional, but if the file dose not exist and 
-    any arguments are 'None', the program will error and halt.
+    any arguments without defulat values are 'None', the program will error and halt.
     Some arguments have default values, which will be used if they are not
     explicitly specified and if the inlsd.dat file is missing.
     
@@ -73,10 +73,10 @@ def main(observation=None, mask=None, outName='prof.dat',
                           Default = 0)
     :param outPlotImgName: name of the plotted figure of the LSD profile (if saved)
                           (Default = 'figProf.pdf')
-    :rtype: Returns the calculated LSD profile, as a tuple of numpy arrays
-            (velocity, Stokes I, error on I, Stokes V, error on V,
-            Null 1, error on Null 1) and a text string for the header.
-            Optionally also returns output model spectrum as a tuple of arrays.
+    :return: Returns the calculated LSD profile, as a tuple of numpy arrays
+             (velocity, Stokes I, error on I, Stokes V, error on V,
+             Null 1, error on Null 1) and a text string for the header.
+             Optionally also returns output model spectrum as a tuple of arrays.
     """
     
     #Read input data
@@ -102,17 +102,15 @@ def main(observation=None, mask=None, outName='prof.dat',
     if(fLSDPlotImg != None):    params.fLSDPlotImg = fLSDPlotImg
     if(fSavePlotImg != None):   params.fSavePlotImg = fSavePlotImg
     if(outPlotImgName != None): params.outPlotImgName = outPlotImgName
+    if(params.fSavePlotImg == 0): params.outPlotImgName = ''
 
     #Check if any important parameters are missing
     if(params.inObs == None or params.inMask == None or params.velStart == None
        or params.velEnd == None or params.pixVel == None
        or params.normDepth == None or params.normLande == None
        or params.normWave == None):
-        print('WARNING: missing inlsd.dat!')
-        print('ERROR: missing a required input value in lsdpy.main()!')
-        print('Halting...')
-        import sys
-        sys.exit()
+        raise ValueError('WARNING: missing inlsd.dat!\n'
+            +'ERROR: missing a required input value in lsdpy.lsd()!')
     
     #Read the observation
     obs = lsdpFunc.observation(params.inObs)
@@ -204,12 +202,51 @@ def main(observation=None, mask=None, outName='prof.dat',
             prof.specN1, prof.specSigN1, headerTxt)
 
 
-# Boilerplate for running the main function #
-if __name__ == "__main__":
+def make_inlsd_file(inFname):
+    """Generate a default inlsd.dat file
 
+    This won't be suitable for all cases,
+    but provides some resonable default values."""
+    
+    defaultText = """#Controls for the LSD code.  Order of lines matters, # are comments
+# Input observation
+observation.s
+# Line mask
+mask.dat
+# start and end velocity (km/s) for LSD profile
+-200.  +200.
+# pixel size in velocity (km/s)
+1.8
+# mask/profile normalization parameters (depth, Lande factor, wavelength(nm))
+0.2  1.2  500.
+# remove continuum polarization in LSD profile? (0=no, 1=yes)
+1
+# Remove very closely spaced lines from the mask
+0
+# sigma clip to reject bad pixels (sigma level, iterations 0 = no clipping done)
+# the sigma level should be very large, to avoid rejecting too many points
+500.  0
+# Interpolation mode for fitting model to observation (1=linear 0=nearest)
+1
+# Save LSD model spectrum? (0=no, 1=yes),  file name
+0  outModelSpec.dat
+# Plot LSD profile?  Save plot? (0=no, 1=yes), file name (.png .eps or .pdf)
+1  0  prof.png
+"""
+    inFile = open(inFname, 'w')
+    inFile.write(defaultText)
+    inFile.close()
+    return
+
+def lsd_cli():
+    """The command line interface function for LSDpy
+    
+    This is a wrapper around the main lsd() function,
+    with extra features for reading command line arguments.
+    """
     #Read command line arguments (optional)
     import argparse
-    parser = argparse.ArgumentParser(description='Run Least Squares Deconvolution, most input parameters are in read from the file inlsd.dat.')
+    parser = argparse.ArgumentParser(description='Run Least Squares Deconvolution, most input parameters are in read from the file inlsd.dat. If the inlsd.dat file is not present, a template version will be generated, which can be modified for your use case.')
     parser.add_argument("observation", nargs='?', default='', help='Observed spectrum file. If none is given, defaults to the filename specified in inlsd.dat')
     parser.add_argument("output", nargs='?', default='prof.dat', help='Name for the LSD profile file. If none is given, defaults to prof.dat')
     parser.add_argument("-m", "--mask",dest='mask',  default='', help='Mask for the LSD calculation. If none is given, defaults to the value specified in inlsd.dat')
@@ -229,7 +266,26 @@ if __name__ == "__main__":
     else:
         fSaveModelS = None
         outModelName = None
+
+    #Check if inlsd.dat exists, and if not generate a template file
+    inFname = 'inlsd.dat'
+    try:
+        infile = open(inFname, 'r')
+        infile.close()
+    except FileNotFoundError:
+        print('{:} file not found!'.format(inFname))
+        print('Generating a template {:} file. '.format(inFname)
+              +'Please modify it appropriately for your data!')
+        make_inlsd_file(inFname)
+        return
     
     #Run the LSD code
-    main(observation=observation, outName=outName, mask=mask,
+    lsd(observation=observation, outName=outName, mask=mask,
          fSaveModelS=fSaveModelS, outModelName=outModelName)
+    return
+
+
+# Boilerplate for running the command line interface function,
+# if this script is called directly from the terminal
+if __name__ == "__main__":
+    lsd_cli()
