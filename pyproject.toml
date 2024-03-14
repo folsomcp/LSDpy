@@ -7,8 +7,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "LSDpy"
-version = "0.4.6"
-authors = [ { name="Colin Fosom", email="fosomcp@gmail.com" },
+version = "0.4.7"
+authors = [ { name="Colin Folsom", email="fosomcp+dev@gmail.com" },
 ]
 description = "Least Squares Deconvolution for spectropolarimetric analysis"
 readme = "README.md"
